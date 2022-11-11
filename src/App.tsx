@@ -1,58 +1,45 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import { useDispatch, useSelector } from "react-redux";
+import { setCity, setWeather } from "./redux/slices/weatherSlice";
+import React, { useEffect } from "react";
+import { getWeatherData } from "./api/weatherApi";
+import { RootState } from "./redux/store";
+import { Coord } from "./models/models";
+import Forecast from "./components/Forecast/Forecast";
+import Search from "./components/Search";
 
-function App() {
+const App = () => {
+  const searchValue = useSelector((state: RootState) => state.search.value);
+  const weatherData = useSelector((state: RootState) => state.weather.data);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    interface Fetchable {
+      value: Coord;
+      label: string;
+    }
+
+    const fetchWeatherData = async ({ value, label }: Fetchable): Promise<void> => {
+      const weatherData = await getWeatherData(value);
+
+      dispatch(setCity(label));
+      dispatch(setWeather(weatherData));
+    };
+
+    if (searchValue) {
+      try {
+        fetchWeatherData(searchValue as unknown as Fetchable);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, [searchValue]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
-    </div>
+    <>
+      <Search />
+      {weatherData.timezone && <Forecast />}
+    </>
   );
-}
+};
 
 export default App;
